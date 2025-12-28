@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join My Live Class</title>
-    <!-- Fonts aur Icons -->
+    <!-- Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
         :root {
@@ -119,9 +119,18 @@
             width: 100%;
         }
 
-        .btn-join:hover {
+        .btn-join:hover:not(.disabled) {
             transform: translateY(-5px);
             filter: brightness(1.15);
+        }
+
+        /* Explicit Disabled Style */
+        .btn-join.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #334155;
+            box-shadow: none;
+            pointer-events: none;
         }
 
         .update-time {
@@ -130,19 +139,40 @@
             color: #64748b;
         }
 
-        /* Upload UI */
-        .btn-upload-trigger {
-            margin-top: 50px;
+        .admin-controls {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-admin {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #94a3b8;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-admin:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-remove {
+            color: var(--error);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-remove:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ff8080;
         }
 
         .modal {
@@ -163,237 +193,178 @@
             width: 90%;
             max-width: 400px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
         }
 
-        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group { margin-bottom: 20px; }
         .input-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px; }
         input { width: 100%; background: #0f172a; border: 1px solid #334155; padding: 14px; border-radius: 12px; color: white; outline: none; }
         input:focus { border-color: var(--primary); }
 
-        .btn-save-upload { width: 100%; background: white; color: #0f172a; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; }
-        .btn-close-modal { background: none; border: none; color: #64748b; margin-top: 20px; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+        .btn-save { width: 100%; background: white; color: #0f172a; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn-cancel { width: 100%; background: transparent; color: #64748b; border: none; margin-top: 10px; cursor: pointer; font-size: 0.85rem; }
 
-        .loading-screen {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: #0f172a;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-radius: 28px;
-            z-index: 100;
-        }
-
-        /* Message Box / Toast */
         #toast {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
             border-radius: 12px;
+            background: var(--success);
             color: white;
-            font-weight: 600;
+            font-size: 0.9rem;
             display: none;
             z-index: 2000;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease;
         }
-
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1);
-            border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="toast"></div>
-
+    <div id="toast">Link Updated Successfully!</div>
     <div class="blob"></div>
 
     <div class="container">
         <div class="glass-card">
-            <div id="loading" class="loading-screen">
-                <div class="spinner"></div>
-                <p>Connecting to Database...</p>
-            </div>
-
-            <div class="status-badge">
+            <div class="status-badge" id="status-badge">
                 <div class="status-dot"></div>
-                CLASS PORTAL
+                LIVE CLASS PORTAL
             </div>
 
-            <h1>Zoom Meeting</h1>
-            <p>Welcome! Niche diye gaye button par click karke join karein.</p>
+            <h1 id="main-heading">Zoom Meeting</h1>
+            <p id="sub-text">Welcome! Click the button below to join the session.</p>
 
-            <button id="join-link" class="btn-join">
+            <!-- Base Join Link -->
+            <a id="join-btn" href="#" target="_blank" class="btn-join">
                 <i class="fas fa-video"></i> Join Live Now
-            </button>
+            </a>
 
-            <div class="update-time" id="timestamp">Syncing...</div>
+            <div class="update-time" id="timestamp">No link updated yet</div>
         </div>
 
-        <button class="btn-upload-trigger" onclick="openUploadModal()">
-            <i class="fas fa-lock"></i> Upload New Link
-        </button>
+        <div class="admin-controls">
+            <button class="btn-admin" onclick="openModal('upload')">
+                <i class="fas fa-plus"></i> Upload Link
+            </button>
+            <button class="btn-admin btn-remove" id="remove-btn" onclick="openModal('remove')">
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        </div>
     </div>
 
-    <div id="upload-modal" class="modal">
+    <!-- Upload/Remove Modal -->
+    <div id="admin-modal" class="modal">
         <div class="modal-content">
-            <h2 style="margin-bottom: 20px;"><i class="fas fa-shield-alt"></i> Admin Upload</h2>
+            <h2 id="modal-title" style="margin-bottom: 20px;">Admin Access</h2>
             
             <div class="input-group">
-                <label>Security Password</label>
-                <input type="password" id="admin-pass" placeholder="Enter Password">
+                <label>Admin Password</label>
+                <input type="password" id="admin-pass" placeholder="Enter password">
             </div>
 
-            <div class="input-group">
+            <div id="url-group" class="input-group">
                 <label>New Zoom Link</label>
                 <input type="text" id="new-link" placeholder="https://zoom.us/j/...">
             </div>
 
-            <button class="btn-save-upload" id="upload-confirm-btn">Update Link</button>
-            <button class="btn-close-modal" onclick="closeUploadModal()">Cancel</button>
+            <button class="btn-save" id="confirm-btn">Confirm Change</button>
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // CONFIGURATION
+        const MASTER_PASSWORD = "malikawais"; 
+        let currentMode = ""; 
 
-        const MASTER_PASSWORD = "zoom_admin_pass"; 
+        const joinBtn = document.getElementById('join-btn');
+        const timestamp = document.getElementById('timestamp');
+        const mainHeading = document.getElementById('main-heading');
+        const subText = document.getElementById('sub-text');
+        const adminModal = document.getElementById('admin-modal');
+        const urlGroup = document.getElementById('url-group');
+        const modalTitle = document.getElementById('modal-title');
+        const removeBtn = document.getElementById('remove-btn');
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'zoom-app-v1';
+        function loadData() {
+            const savedLink = localStorage.getItem('zoom_link');
+            const savedTime = localStorage.getItem('zoom_time');
 
-        const joinBtn = document.getElementById('join-link');
-        const timestampText = document.getElementById('timestamp');
-        const loadingScreen = document.getElementById('loading');
-        const uploadModal = document.getElementById('upload-modal');
-        const toast = document.getElementById('toast');
-        const uploadConfirmBtn = document.getElementById('upload-confirm-btn');
-
-        let currentActiveUrl = "";
-
-        window.showToast = (msg, type = 'success') => {
-            toast.innerText = msg;
-            toast.style.background = type === 'success' ? 'var(--success)' : 'var(--error)';
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        };
-
-        window.openUploadModal = () => uploadModal.style.display = 'flex';
-        window.closeUploadModal = () => uploadModal.style.display = 'none';
-
-        // Path: artifacts -> appId -> public -> data -> links -> current
-        const getDocPath = () => doc(db, 'artifacts', appId, 'public', 'data', 'links', 'current');
-
-        async function startAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) {
-                console.error("Auth failed:", e);
-                timestampText.innerText = "Connection Error.";
+            if (savedLink && savedLink !== "") {
+                joinBtn.href = savedLink;
+                joinBtn.classList.remove('disabled');
+                joinBtn.innerHTML = '<i class="fas fa-video"></i> Join Live Now';
+                
+                mainHeading.innerText = "Zoom Meeting";
+                subText.innerText = "Welcome! Click the button below to join the session.";
+                timestamp.innerText = `Last Updated: ${savedTime}`;
+                removeBtn.style.display = "inline-flex";
+            } else {
+                // Link is empty or removed
+                joinBtn.href = "#";
+                joinBtn.classList.add('disabled');
+                joinBtn.innerHTML = '<i class="fas fa-clock"></i> No Active Link';
+                
+                mainHeading.innerText = "No Classes Scheduled";
+                subText.innerText = "Teacher has not uploaded a link yet.";
+                timestamp.innerText = "Waiting for update...";
+                removeBtn.style.display = "none";
             }
         }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                onSnapshot(getDocPath(), (snap) => {
-                    loadingScreen.style.display = 'none';
-                    if (snap.exists()) {
-                        const data = snap.data();
-                        currentActiveUrl = data.url;
-                        joinBtn.style.opacity = "1";
-                        joinBtn.style.pointerEvents = "auto";
-                        joinBtn.innerHTML = '<i class="fas fa-video"></i> Join Live Now';
-                        timestampText.innerText = `Last Updated: ${data.time}`;
-                    } else {
-                        currentActiveUrl = "";
-                        joinBtn.style.opacity = "0.5";
-                        joinBtn.style.pointerEvents = "none";
-                        joinBtn.innerHTML = '<i class="fas fa-clock"></i> No Active Link';
-                        timestampText.innerText = "No active link found.";
-                    }
-                }, (err) => {
-                    loadingScreen.style.display = 'none';
-                    timestampText.innerText = "Syncing error.";
-                    console.error("Firestore sync error:", err);
-                });
-            }
-        });
-
-        // Robust redirection logic
-        joinBtn.onclick = () => {
-            if (!currentActiveUrl || currentActiveUrl === "") {
-                showToast("Teacher ne abhi link upload nahi kiya.", "error");
-                return;
-            }
-            
-            // Link open karne ka sabse reliable tareeka
-            const win = window.open(currentActiveUrl, '_blank');
-            if (win) {
-                win.focus();
+        window.openModal = (mode) => {
+            currentMode = mode;
+            adminModal.style.display = 'flex';
+            if (mode === 'remove') {
+                modalTitle.innerText = "Confirm Removal";
+                urlGroup.style.display = "none";
             } else {
-                // Agar popup block ho jaye to direct location change
-                window.location.href = currentActiveUrl;
+                modalTitle.innerText = "Upload New Link";
+                urlGroup.style.display = "block";
             }
         };
 
-        uploadConfirmBtn.onclick = async () => {
-            const pass = document.getElementById('admin-pass').value.trim();
+        window.closeModal = () => {
+            adminModal.style.display = 'none';
+            document.getElementById('admin-pass').value = '';
+            document.getElementById('new-link').value = '';
+        };
+
+        document.getElementById('confirm-btn').onclick = () => {
+            const pass = document.getElementById('admin-pass').value;
             const url = document.getElementById('new-link').value.trim();
 
             if (pass !== MASTER_PASSWORD) {
-                showToast("Incorrect Password!", "error");
+                alert("Incorrect Password!");
                 return;
             }
 
-            if (!url || !url.startsWith('http')) {
-                showToast("Sahi link enter karein (https://...)", "error");
-                return;
+            if (currentMode === 'upload') {
+                if (!url || !url.startsWith('http')) {
+                    alert("Please enter a valid URL (https://...)");
+                    return;
+                }
+                localStorage.setItem('zoom_link', url);
+                localStorage.setItem('zoom_time', new Date().toLocaleTimeString());
+                showToast("Link Uploaded!");
+            } else if (currentMode === 'remove') {
+                localStorage.removeItem('zoom_link');
+                localStorage.removeItem('zoom_time');
+                showToast("Link Removed!");
             }
 
-            if (!auth.currentUser) {
-                showToast("Reconnecting to database...", "error");
-                return;
-            }
-
-            try {
-                uploadConfirmBtn.innerText = "Uploading...";
-                uploadConfirmBtn.disabled = true;
-
-                await setDoc(getDocPath(), {
-                    url: url,
-                    time: new Date().toLocaleTimeString() + " " + new Date().toLocaleDateString()
-                });
-                
-                showToast("Link Successfully Upload Ho Gaya!");
-                closeUploadModal();
-                document.getElementById('admin-pass').value = '';
-                document.getElementById('new-link').value = '';
-            } catch (error) {
-                console.error("Upload Error:", error);
-                showToast("Upload failed. Try again.", "error");
-            } finally {
-                uploadConfirmBtn.innerText = "Update Link";
-                uploadConfirmBtn.disabled = false;
-            }
+            loadData();
+            closeModal();
         };
 
-        startAuth();
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
